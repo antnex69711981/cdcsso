@@ -11,6 +11,9 @@ BASE_SSO_URL = "http://192.168.171.27:8080/api/values/CheckKey?SSOkey="
 class ValidateRequest(BaseModel):
     sso_key: str
 
+class DecodeRequest(BaseModel):
+    encode_content: str
+
 def try_base64_decode(s: str):
     raw = base64.b64decode(s, validate=True)
     try:
@@ -25,6 +28,7 @@ def try_base64_decode(s: str):
 async def validate(req: ValidateRequest):
     url = f"{BASE_SSO_URL}{req.sso_key}"
     print(f"Validating SSO key: {req.sso_key} with URL: {url}")
+
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(url)
@@ -41,3 +45,12 @@ async def validate(req: ValidateRequest):
         return {"ok": True, "decoded": decoded}
     except Exception as e:
         return {"ok": False, "error": f"Decode failed: {e}"}
+    
+@app.post("/decode")
+async def decode(req: DecodeRequest):
+    try:
+        decoded = try_base64_decode(req.encode_content)
+        return {"ok": True, "decoded": decoded}
+    except Exception as e:
+        return {"ok": False, "error": f"Decode failed: {e}"}
+    
