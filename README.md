@@ -7,8 +7,11 @@ What it does
 - If the decoded value is JSON, it returns parsed JSON; otherwise returns text
 
 Run locally
-  pip install fastapi uvicorn httpx
-  uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+```
+make build
+make run
+make stop
+```
 
 Example
 ```
