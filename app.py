@@ -42,7 +42,7 @@ async def validate(req: ValidateRequest):
 
     try:
         decoded = try_base64_decode(text_body)
-        return {"ok": True, "decoded": decoded} 
+        return {"ok": True, "decoded": decoded}
     except Exception as e:
         return {"ok": False, "error": f"Decode failed: {e}"}
     
