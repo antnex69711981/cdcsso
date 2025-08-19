@@ -3,9 +3,11 @@ from pydantic import BaseModel
 import httpx
 import base64
 import json
+import logging
 
 app = FastAPI()
 
+logging.basicConfig(level=logging.INFO)
 BASE_SSO_URL = "http://192.168.171.27:8080/api/values/CheckKey?SSOkey="
 
 class ValidateRequest(BaseModel):
@@ -44,7 +46,8 @@ async def validate(req: ValidateRequest):
         decoded = try_base64_decode(text_body)
         return {"ok": True, "decoded": decoded}
     except Exception as e:
-        return {"ok": False, "error": f"Decode failed: {e}"}
+        logging.exception("Decode failed: %s", e)
+        return {"ok": False, "error": "Decode failed"}
     
 @app.post("/decode")
 async def decode(req: DecodeRequest):
@@ -52,5 +55,6 @@ async def decode(req: DecodeRequest):
         decoded = try_base64_decode(req.encode_content)
         return {"ok": True, "decoded": decoded}
     except Exception as e:
-        return {"ok": False, "error": f"Decode failed: {e}"}
+        logging.exception("Decode failed: %s", e)
+        return {"ok": False, "error": "Decode failed"}
     
