@@ -117,7 +117,7 @@ async def ldap_sync(req: LdapAuthRequest):
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(
-                "http://127.0.0.1:8080/ragapi/api/v1/tx",
+                "http://192.168.171.62:8080/ragapi/api/v1/tx",
                 json=payload
             )
             resp.raise_for_status()
