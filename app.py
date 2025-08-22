@@ -4,6 +4,7 @@ import httpx
 import base64
 import json
 import logging
+from ldap3 import Server, Connection, ALL, NTLM
 
 app = FastAPI()
 
@@ -26,6 +27,7 @@ def try_base64_decode(s: str):
         except UnicodeDecodeError:
             return raw.hex()
 
+# ======== API: Validate SSO ========
 @app.post("/validate")
 async def validate(req: ValidateRequest):
     url = f"{BASE_SSO_URL}{req.sso_key}"
@@ -48,7 +50,8 @@ async def validate(req: ValidateRequest):
     except Exception as e:
         logging.exception("Decode failed: %s", e)
         return {"ok": False, "error": "Decode failed"}
-    
+
+# ======== API: Decode ========    
 @app.post("/decode")
 async def decode(req: DecodeRequest):
     try:
@@ -57,4 +60,46 @@ async def decode(req: DecodeRequest):
     except Exception as e:
         logging.exception("Decode failed: %s", e)
         return {"ok": False, "error": "Decode failed"}
-    
+
+# ======== API: LDAP SYNC  ========
+@app.post("/ldap_sync")
+async def ldap_sync():
+    LDAP_SERVER = "ldap://192.168.171.43:389"
+    LDAP_USER = "cdc_antnex"
+    LDAP_DOMAIN = "cdc.gov.tw"
+    LDAP_PASSWORD = "cdc@20250718"
+    USER_DN = f"{LDAP_USER}@{LDAP_DOMAIN}"
+    BASE_DN = "DC=cdc,DC=gov,DC=tw"
+
+    try:
+        server = Server(LDAP_SERVER, get_info=ALL)
+        conn = Connection(
+            server,
+            user=USER_DN,
+            password=LDAP_PASSWORD,
+            authentication=NTLM,
+            auto_bind=True
+        )
+
+        conn.search(
+            search_base=BASE_DN,
+            search_filter="(&(objectClass=user)(!(userPrincipalName=*$)))",
+            attributes=["sAMAccountName"]
+        )
+
+        users = []
+        for entry in conn.entries:
+            users.append({
+                "account": entry.sAMAccountName.value,
+                "name": entry.sAMAccountName.value,
+                "password": "",
+                "paddowrdmd5": "",
+                "status": 1
+            })
+
+        conn.unbind()
+
+        return {"ok": True, "users": users}
+    except Exception as e:
+        logging.exception("LDAP Sync failed: %s", e)
+        return {"ok": False, "error": "LDAP Sync Failed"}
