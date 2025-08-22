@@ -86,7 +86,7 @@ async def ldap_sync(req: LdapAuthRequest):
 
         conn.search(
             search_base=BASE_DN,
-            search_filter="(&(objectClass=user)(!(userPrincipalName=*$)))",
+            search_filter="(&(objectClass=user)(objectCategory=person))",
             attributes=["sAMAccountName"]
         )
 
