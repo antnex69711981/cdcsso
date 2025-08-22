@@ -17,6 +17,10 @@ class ValidateRequest(BaseModel):
 class DecodeRequest(BaseModel):
     encode_content: str
 
+class LdapAuthRequest(BaseModel):
+    username: str
+    password: str
+
 def try_base64_decode(s: str):
     raw = base64.b64decode(s, validate=True)
     try:
@@ -62,11 +66,11 @@ async def decode(req: DecodeRequest):
         return {"ok": False, "error": "Decode failed"}
 
 # ======== API: LDAP SYNC  ========
-@app.get("/ldap_sync")
-async def ldap_sync():
+@app.post("/ldap_sync")
+async def ldap_sync(req: LdapAuthRequest):
     LDAP_SERVER = "ldap://192.168.171.43:389"
-    LDAP_PASSWORD = "cdc@20250718"
-    USER_DN = "cdc_antnex@cdc.gov.tw"
+    LDAP_PASSWORD = req.password
+    USER_DN = req.username
     BASE_DN = "DC=cdc,DC=gov,DC=tw"
 
     try:
