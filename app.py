@@ -4,7 +4,7 @@ import httpx
 import base64
 import json
 import logging
-from ldap3 import Server, Connection, ALL, NTLM
+from ldap3 import SIMPLE, Server, Connection, ALL
 
 app = FastAPI()
 
@@ -62,13 +62,11 @@ async def decode(req: DecodeRequest):
         return {"ok": False, "error": "Decode failed"}
 
 # ======== API: LDAP SYNC  ========
-@app.post("/ldap_sync")
+@app.get("/ldap_sync")
 async def ldap_sync():
     LDAP_SERVER = "ldap://192.168.171.43:389"
-    LDAP_USER = "cdc_antnex"
-    LDAP_DOMAIN = "cdc.gov.tw"
     LDAP_PASSWORD = "cdc@20250718"
-    USER_DN = f"{LDAP_USER}@{LDAP_DOMAIN}"
+    USER_DN = "cdc_antnex@cdc.gov.tw"
     BASE_DN = "DC=cdc,DC=gov,DC=tw"
 
     try:
@@ -77,7 +75,7 @@ async def ldap_sync():
             server,
             user=USER_DN,
             password=LDAP_PASSWORD,
-            authentication=NTLM,
+            authentication=SIMPLE,
             auto_bind=True
         )
 
