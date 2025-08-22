@@ -4,6 +4,7 @@ import httpx
 import base64
 import json
 import logging
+import datetime
 from ldap3 import SIMPLE, Server, Connection, ALL
 
 app = FastAPI()
@@ -89,9 +90,9 @@ async def ldap_sync(req: LdapAuthRequest):
             attributes=["sAMAccountName"]
         )
 
-        users = []
+        accounts = []
         for entry in conn.entries:
-            users.append({
+            accounts.append({
                 "account": entry.sAMAccountName.value,
                 "name": entry.sAMAccountName.value,
                 "password": "",
@@ -101,7 +102,28 @@ async def ldap_sync(req: LdapAuthRequest):
 
         conn.unbind()
 
-        return {"ok": True, "users": users}
+        payload = {
+            "header": {
+                "txcode": "ACCOUNT_BATCH_INSERT",
+                "usercode": None,
+                "token": None,
+                "appversion": "ldap_sync",
+                "datetime": datetime.datetime.now().astimezone().isoformat()
+            },
+            "message": {
+                "accounts": accounts
+            }
+        }
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                "http://127.0.0.1:8080/ragapi/api/v1/tx",
+                json=payload
+            )
+            resp.raise_for_status()
+            result = resp.json()
+
+        return {"ok": True, "inserted": len(accounts), "result": result}
     except Exception as e:
         logging.exception("LDAP Sync failed: %s", e)
         return {"ok": False, "error": "LDAP Sync Failed"}
